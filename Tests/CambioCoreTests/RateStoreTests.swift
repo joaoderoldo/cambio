@@ -194,4 +194,37 @@ struct RateStoreTests {
         store.stop()
         #expect(!store.isRunning)
     }
+
+    @Test func freshnessTracksSuccessfulFetches() async {
+        let store = makeStore(extraPairs: [eurBrl])
+        #expect(!store.isFresh(.usdBrl, within: 120))
+        await store.refresh()
+        #expect(store.isFresh(.usdBrl, within: 120))
+        #expect(store.isFresh(eurBrl, within: 120))
+        clock.now += 200
+        #expect(!store.isFresh(.usdBrl, within: 120))
+        await client.setFailLatest(true)
+        await store.refresh()
+        #expect(!store.isFresh(.usdBrl, within: 120))
+    }
+
+    @Test func cachedQuoteIsNotFresh() async {
+        let first = makeStore()
+        await first.refresh()
+        let second = makeStore()
+        #expect(second.quote != nil)
+        #expect(!second.isFresh(.usdBrl, within: 120))
+    }
+
+    @Test func fetchQuoteForUntrackedPair() async {
+        let store = makeStore()
+        await store.fetchQuote(for: eurBrl)
+        #expect(store.quote(for: eurBrl)?.pair == eurBrl)
+        #expect(store.isFresh(eurBrl, within: 60))
+        await client.setFailLatest(true)
+        let gbpBrl = CurrencyPair(base: "GBP", quote: "BRL")
+        await store.fetchQuote(for: gbpBrl)
+        #expect(store.quote(for: gbpBrl) == nil)
+        #expect(!store.isOffline)
+    }
 }

@@ -56,8 +56,13 @@ struct EditPlatformPage: View {
 
     private var commercial: Double? { store.quote(for: platform.pair)?.bid }
 
+    /// Calibrating needs the commercial rate of this minute, not a cached one.
+    private var hasLiveRate: Bool { commercial != nil && store.isFresh(platform.pair, within: 120) }
+
     private var computedSpread: Double? {
-        guard let rate = DecimalInput.parse(observedRate), let commercial else { return nil }
+        guard hasLiveRate, let commercial,
+              let rate = DecimalInput.parseRate(observedRate, near: commercial)
+        else { return nil }
         return Payout.spread(platformRate: rate, commercial: commercial)
     }
 
@@ -67,21 +72,29 @@ struct EditPlatformPage: View {
     }
 
     var body: some View {
+        // Title and action stay pinned; the form scrolls when the panel is short (0–1 platforms).
         VStack(alignment: .leading, spacing: 0) {
             NavBar(verbatim: title, back: back)
-            fields
-                .padding(.horizontal, 14)
-                .padding(.top, 8)
-            calibration
-                .padding(.horizontal, 14)
-                .padding(.top, 10)
+            ScrollIfLive {
+                VStack(alignment: .leading, spacing: 0) {
+                    fields
+                        .padding(.horizontal, 14)
+                        .padding(.top, 8)
+                    calibration
+                        .padding(.horizontal, 14)
+                        .padding(.top, 8)
+                }
+                .padding(.bottom, 4)
+            }
             bottomAction
-                .padding(.top, 12)
-            Spacer(minLength: 0)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onExitCommand(perform: back)
-        .task { await store.refreshIfStale(olderThan: 60) }
+        .task(id: platform.pair) {
+            if !store.isFresh(platform.pair, within: 60) { await store.fetchQuote(for: platform.pair) }
+        }
         .onChange(of: name) { _, value in platform.name = value }
         .onChange(of: method) { _, value in platform.method = value }
         .onChange(of: fee) { _, value in
@@ -172,9 +185,11 @@ struct EditPlatformPage: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "scope").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.accentColor)
-                Text("Adjust from the platform's current rate").font(.system(size: 12.5, weight: .semibold))
+                Text("Adjust from the platform's current rate")
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Text("Type the rate \(platform.name.isEmpty ? "—" : platform.name) is showing. Cambio compares it with this minute's commercial rate.")
+            calibrationHint
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -211,14 +226,14 @@ struct EditPlatformPage: View {
             }
             HStack(spacing: 5) {
                 Image(systemName: "arrow.turn.down.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(.tertiary)
-                if let commercial {
+                if hasLiveRate, let commercial {
                     if let computedSpread {
                         Text("spread \(RateFormat.percent(computedSpread)) · commercial now \(RateFormat.number(commercial, fractionDigits: 4))")
                     } else {
                         Text("commercial now \(RateFormat.number(commercial, fractionDigits: 4))")
                     }
                 } else {
-                    Text("No commercial rate yet")
+                    Text("No live commercial rate right now")
                 }
             }
             .font(.system(size: 11.5))
@@ -231,6 +246,13 @@ struct EditPlatformPage: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(Color.accentColor.opacity(0.25), lineWidth: 1)
         )
+    }
+
+    private var calibrationHint: Text {
+        let name = platform.name.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty
+            ? Text("Type the rate the platform is showing. Cambio compares it with this minute's commercial rate.")
+            : Text("Type the rate \(name) is showing. Cambio compares it with this minute's commercial rate.")
     }
 
     // MARK: Add or remove

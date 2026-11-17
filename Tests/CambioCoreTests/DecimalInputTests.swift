@@ -21,4 +21,17 @@ struct DecimalInputTests {
         #expect(DecimalInput.parse("5.000", locale: enUS) == 5.0)
         #expect(DecimalInput.parse("5,000", locale: enUS) == 5000)
     }
+
+    @Test func rateNearReference() {
+        // Platforms often show rates with a dot ("5.723") even for pt_BR users, and vice versa.
+        #expect(DecimalInput.parseRate("5.723", near: 5.78, locale: ptBR) == 5.723)
+        #expect(DecimalInput.parseRate("5,723", near: 5.78, locale: enUS) == 5.723)
+        #expect(DecimalInput.parseRate("5,72386", near: 5.78, locale: ptBR) == 5.72386)
+        #expect(DecimalInput.parseRate("5.72386", near: 5.78, locale: ptBR) == 5.72386)
+        #expect(DecimalInput.parseRate("abc", near: 5.78, locale: ptBR) == nil)
+    }
+
+    @Test func rejectsNonFinite() {
+        #expect(DecimalInput.parse(String(repeating: "9", count: 400), locale: ptBR) == nil)
+    }
 }

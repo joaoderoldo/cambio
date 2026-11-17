@@ -55,6 +55,14 @@ public final class PlatformStore {
         Set(platforms.map(\.pair))
     }
 
+    /// The calculator's source currency: the preferred one while some platform still uses it,
+    /// otherwise the first one in use, otherwise `fallback` (the menu bar's).
+    public func baseCurrency(preferring preferred: String?, fallback: String) -> String {
+        let bases = baseCurrencies
+        if let preferred, bases.contains(preferred) { return preferred }
+        return bases.first ?? fallback
+    }
+
     /// Source currencies in the order they first appear.
     public var baseCurrencies: [String] {
         var seen: [String] = []

@@ -9,7 +9,8 @@ struct CalculatorPage: View {
     let back: () -> Void
 
     @State private var amountText: String
-    @State private var base: String
+    /// The currency the person picked; falls back when no platform uses it any more.
+    @State private var preferredBase: String?
     @Environment(\.isSnapshot) private var isSnapshot
 
     private static let quickAmounts: [Double] = [1000, 2000, 5000, 10000]
@@ -20,7 +21,6 @@ struct CalculatorPage: View {
         self.edit = edit
         self.back = back
         _amountText = State(initialValue: Self.text(for: platforms.calculatorAmount))
-        _base = State(initialValue: platforms.baseCurrencies.first ?? store.pair.base)
     }
 
     private static func text(for amount: Double) -> String {
@@ -28,6 +28,10 @@ struct CalculatorPage: View {
     }
 
     private var amount: Double { platforms.calculatorAmount }
+
+    private var base: String {
+        platforms.baseCurrency(preferring: preferredBase, fallback: store.pair.base)
+    }
 
     private var visible: [Platform] {
         platforms.platforms.filter { $0.pair.base == base }
@@ -111,7 +115,7 @@ struct CalculatorPage: View {
         if bases.count > 1, !isSnapshot {
             Menu {
                 ForEach(bases, id: \.self) { code in
-                    Button(code) { base = code }
+                    Button(code) { preferredBase = code }
                 }
             } label: {
                 CurrencyBadge(code: base, size: 22)

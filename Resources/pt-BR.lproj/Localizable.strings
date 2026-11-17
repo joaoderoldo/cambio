@@ -49,7 +49,6 @@
 "Apply" = "Aplicar";
 "spread %@ · commercial now %@" = "spread %@ · comercial agora %@";
 "commercial now %@" = "comercial agora %@";
-"No commercial rate yet" = "Ainda sem cotação comercial";
 "Add" = "Adicionar";
 "Confirm removal" = "Confirmar remoção";
 "Remove platform" = "Remover plataforma";
@@ -57,3 +56,5 @@
 "fee %@" = "taxa %@";
 "rate −%@" = "câmbio −%@";
 "No fees" = "Sem taxas";
+"No live commercial rate right now" = "Sem cotação comercial ao vivo agora";
+"Type the rate the platform is showing. Cambio compares it with this minute's commercial rate." = "Digite o câmbio que a plataforma está mostrando. O Cambio compara com o comercial deste minuto.";

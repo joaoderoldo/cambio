@@ -2,10 +2,11 @@ import AppKit
 import CambioCore
 import SwiftUI
 
-/// Renders the README screenshots with live data: main page and picker, light and dark.
+/// Renders the README screenshots with live data, light and dark: main page, currency picker,
+/// calculator, platforms and edit. Edge cases (zero and one platform) guard the layout.
 @MainActor
 enum Snapshot {
-    static func render(to directory: URL) async {
+    static func render(to directory: URL, edgeCases: Bool = false) async {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         // In-memory settings, so screenshots never touch the real ones or write files.
         let platforms = PlatformStore(settings: InMemorySettings())
@@ -31,33 +32,53 @@ enum Snapshot {
             ("edit-dark", .dark, [.edit(deel)], .base),
         ]
         for shot in shots {
-            let dark = shot.scheme == .dark
-            let scene = PanelView(
+            write(PanelView(
                 store: store,
                 launchAtLogin: launchAtLogin,
                 platforms: platforms,
                 path: shot.path,
                 pickerSlot: shot.slot,
                 exampleObservedRate: RateFormat.number(5.72386, fractionDigits: 5)
-            )
-                .background(dark ? Color(red: 0.165, green: 0.165, blue: 0.175) : Color(red: 0.965, green: 0.965, blue: 0.965))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.25), radius: 14, y: 6)
-                .padding(28)
-                .background(dark ? Color(white: 0.06) : Color(white: 0.80))
-                .environment(\.colorScheme, shot.scheme)
-                .environment(\.isSnapshot, true)
+            ), scheme: shot.scheme, to: directory.appendingPathComponent("\(shot.name).png"))
+        }
 
-            let renderer = ImageRenderer(content: scene)
-            renderer.scale = 2
-            if let tiff = renderer.nsImage?.tiffRepresentation,
-               let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
-                try? png.write(to: directory.appendingPathComponent("\(shot.name).png"))
-            }
+        guard edgeCases else { return }
+        let none = PlatformStore(settings: InMemorySettings())
+        let one = PlatformStore(settings: InMemorySettings())
+        one.add(Platform.deelPix.instantiated())
+        let edges: [(name: String, platforms: PlatformStore, path: [PanelRoute])] = [
+            ("edge-0-main", none, []),
+            ("edge-0-calculator", none, [.calculator]),
+            ("edge-0-new", none, [.newPlatform]),
+            ("edge-1-edit", one, [.edit(one.platforms[0].id)]),
+            ("edge-1-new", one, [.newPlatform]),
+        ]
+        for edge in edges {
+            write(PanelView(store: store, launchAtLogin: launchAtLogin, platforms: edge.platforms, path: edge.path),
+                  scheme: .light, to: directory.appendingPathComponent("\(edge.name).png"))
+        }
+    }
+
+    private static func write(_ panel: PanelView, scheme: ColorScheme, to file: URL) {
+        let dark = scheme == .dark
+        let scene = panel
+            .background(dark ? Color(red: 0.165, green: 0.165, blue: 0.175) : Color(red: 0.965, green: 0.965, blue: 0.965))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
+            )
+            .shadow(color: .black.opacity(0.25), radius: 14, y: 6)
+            .padding(28)
+            .background(dark ? Color(white: 0.06) : Color(white: 0.80))
+            .environment(\.colorScheme, scheme)
+            .environment(\.isSnapshot, true)
+
+        let renderer = ImageRenderer(content: scene)
+        renderer.scale = 2
+        if let tiff = renderer.nsImage?.tiffRepresentation,
+           let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+            try? png.write(to: file)
         }
     }
 }

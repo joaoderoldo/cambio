@@ -50,7 +50,6 @@
 "Apply" = "Apply";
 "spread %@ · commercial now %@" = "spread %@ · commercial now %@";
 "commercial now %@" = "commercial now %@";
-"No commercial rate yet" = "No commercial rate yet";
 "Add" = "Add";
 "Confirm removal" = "Confirm removal";
 "Remove platform" = "Remove platform";
@@ -58,3 +57,5 @@
 "fee %@" = "fee %@";
 "rate −%@" = "rate −%@";
 "No fees" = "No fees";
+"No live commercial rate right now" = "No live commercial rate right now";
+"Type the rate the platform is showing. Cambio compares it with this minute's commercial rate." = "Type the rate the platform is showing. Cambio compares it with this minute's commercial rate.";

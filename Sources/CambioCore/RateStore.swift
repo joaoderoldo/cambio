@@ -21,6 +21,8 @@ public final class RateStore {
     @ObservationIgnored private let now: @Sendable () -> Date
     @ObservationIgnored private let extraPairs: @MainActor () -> Set<CurrencyPair>
     @ObservationIgnored private var lastSuccess: Date?
+    /// When each pair's quote was last fetched in this session (cached quotes don't count).
+    @ObservationIgnored private var fetchedAt: [CurrencyPair: Date] = [:]
     @ObservationIgnored private var lastHistorySuccess: Date?
     @ObservationIgnored private var lastCatalogSuccess: Date?
     /// Only the most recently started refresh may change state; older ones finish silently.
@@ -80,6 +82,8 @@ public final class RateStore {
             return
         }
         quotes.merge(fetched) { _, new in new }
+        let fetchTime = now()
+        for pair in fetched.keys { fetchedAt[pair] = fetchTime }
         quote = latest
         isOffline = false
         lastSuccess = now()
@@ -91,6 +95,23 @@ public final class RateStore {
             history = points
             lastHistorySuccess = now()
         }
+    }
+
+    /// True when the pair's quote came from the network less than `seconds` ago.
+    public func isFresh(_ pair: CurrencyPair, within seconds: TimeInterval) -> Bool {
+        fetchedAt[pair].map { now().timeIntervalSince($0) < seconds } ?? false
+    }
+
+    /// Fetches one pair right away, e.g. a platform being set up whose pair nothing tracks yet.
+    /// A failure leaves things as they were and does not mark the app offline.
+    public func fetchQuote(for pair: CurrencyPair) async {
+        if pair == self.pair {
+            await refresh()
+            return
+        }
+        guard let fetched = try? await client.latest([pair]), let quote = fetched[pair] else { return }
+        quotes[pair] = quote
+        fetchedAt[pair] = now()
     }
 
     /// The latest quote for any pair in use: the bar's own, or a platform's.

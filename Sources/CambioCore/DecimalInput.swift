@@ -25,8 +25,21 @@ public enum DecimalInput {
         let fraction = parts.count == 2 ? String(parts[1]) : ""
         guard fraction.allSatisfy(\.isNumber) else { return nil }
 
-        guard let integer = digits(ofGrouped: String(parts[0])) else { return nil }
-        return Double((integer.isEmpty ? "0" : integer) + (fraction.isEmpty ? "" : "." + fraction))
+        guard let integer = digits(ofGrouped: String(parts[0])),
+              let value = Double((integer.isEmpty ? "0" : integer) + (fraction.isEmpty ? "" : "." + fraction)),
+              value.isFinite
+        else { return nil }
+        return value
+    }
+
+    /// Reads an exchange rate a platform shows, which may use either convention whatever the
+    /// person's locale ("5.723" on an English site). Of the two readings, keeps the one
+    /// closest to `reference` (the commercial rate).
+    public static func parseRate(_ text: String, near reference: Double, locale: Locale = .current) -> Double? {
+        let other = Locale(identifier: (locale.decimalSeparator ?? ".") == "," ? "en_US" : "pt_BR")
+        let candidates = [parse(text, locale: locale), parse(text, locale: other)].compactMap { $0 }.filter { $0 > 0 }
+        guard reference > 0 else { return candidates.first }
+        return candidates.min { abs(log($0 / reference)) < abs(log($1 / reference)) }
     }
 
     private static func decimalSeparator(in text: String, locale: Locale) -> Character? {

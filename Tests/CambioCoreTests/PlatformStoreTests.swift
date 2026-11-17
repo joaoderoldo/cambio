@@ -81,4 +81,12 @@ struct PlatformStoreTests {
         store.calculatorAmount = -10
         #expect(store.calculatorAmount == 0)
     }
+
+    @Test func baseFallsBackWhenPreferredIsGone() {
+        let store = PlatformStore(settings: settings)
+        #expect(store.baseCurrency(preferring: "EUR", fallback: "EUR") == "EUR")
+        store.add(Platform.deelPix.instantiated())
+        #expect(store.baseCurrency(preferring: "EUR", fallback: "EUR") == "USD")
+        #expect(store.baseCurrency(preferring: "USD", fallback: "EUR") == "USD")
+    }
 }
