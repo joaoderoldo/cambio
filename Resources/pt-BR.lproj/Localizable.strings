@@ -58,3 +58,4 @@
 "No fees" = "Sem taxas";
 "No live commercial rate right now" = "Sem cotação comercial ao vivo agora";
 "Type the rate the platform is showing. Cambio compares it with this minute's commercial rate." = "Digite o câmbio que a plataforma está mostrando. O Cambio compara com o comercial deste minuto.";
+"Rate from %@ · checked %@" = "Cotação de %@ · verificada %@";

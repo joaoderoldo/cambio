@@ -40,6 +40,32 @@ public enum RateFormat {
         value.formatted(.currency(code: String(code.prefix(3))).precision(.fractionLength(fractionDigits)).locale(locale))
     }
 
+    /// How current the shown quote is.
+    public enum Freshness: Equatable, Sendable {
+        /// The quote is about as recent as the last check: "Updated at 16:14".
+        case live(Date)
+        /// The source has not published anything newer (PTAX, weekends): "Rate from 13:07 · checked 16:17".
+        case published(Date, checked: Date)
+    }
+
+    /// `.published` once the quote is more than `threshold` older than the last successful check.
+    public static func freshness(quoteTime: Date, checkedAt: Date?, threshold: TimeInterval = 600) -> Freshness {
+        guard let checkedAt, checkedAt.timeIntervalSince(quoteTime) > threshold else { return .live(quoteTime) }
+        return .published(quoteTime, checked: checkedAt)
+    }
+
+    /// "16:17" for today, "sex. 13:03" for another day (weekday in the locale's language).
+    public static func clockTime(
+        _ date: Date, relativeTo now: Date = Date(), locale: Locale = .current, calendar: Calendar = .current
+    ) -> String {
+        var time = Date.FormatStyle(date: .omitted, time: .shortened, locale: locale, calendar: calendar)
+        time.timeZone = calendar.timeZone
+        guard !calendar.isDate(date, inSameDayAs: now) else { return date.formatted(time) }
+        var weekday = Date.FormatStyle(locale: locale, calendar: calendar).weekday(.abbreviated)
+        weekday.timeZone = calendar.timeZone
+        return "\(date.formatted(weekday)) \(date.formatted(time))"
+    }
+
     /// Absolute value, e.g. `"0,14%"`. Direction is shown separately.
     public static func percent(_ value: Double, fractionDigits: Int = 2, locale: Locale = .current) -> String {
         number(abs(value), fractionDigits: fractionDigits, locale: locale) + "%"

@@ -57,6 +57,13 @@ enum Snapshot {
             write(PanelView(store: store, launchAtLogin: launchAtLogin, platforms: edge.platforms, path: edge.path),
                   scheme: .light, to: directory.appendingPathComponent("\(edge.name).png"))
         }
+
+        // PTAX is published once a day: the status line must show both times.
+        let ptax = RateStore(client: AwesomeAPIClient(), defaults: InMemorySettings())
+        await ptax.loadCatalog()
+        await ptax.select(CurrencyPair(base: "USD", quote: "BRLPTAX"))
+        write(PanelView(store: ptax, launchAtLogin: launchAtLogin, platforms: none),
+              scheme: .light, to: directory.appendingPathComponent("edge-ptax-main.png"))
     }
 
     private static func write(_ panel: PanelView, scheme: ColorScheme, to file: URL) {

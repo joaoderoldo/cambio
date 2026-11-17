@@ -227,4 +227,17 @@ struct RateStoreTests {
         #expect(store.quote(for: gbpBrl) == nil)
         #expect(!store.isOffline)
     }
+
+    @Test func lastCheckedIsTheTimeOfTheLastSuccessfulFetch() async {
+        let store = makeStore()
+        #expect(store.lastChecked == nil)
+        await store.refresh()
+        #expect(store.lastChecked == clock.now)
+        let checked = clock.now
+        clock.now += 60
+        await client.setFailLatest(true)
+        await store.refresh()
+        #expect(store.lastChecked == checked)
+        #expect(makeStore().lastChecked == nil)
+    }
 }

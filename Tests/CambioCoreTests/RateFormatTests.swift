@@ -59,4 +59,23 @@ struct RateFormatTests {
         #expect(RateFormat.percent(2.188, fractionDigits: 1, locale: ptBR) == "2,2%")
         #expect(RateFormat.percent(-0.2, fractionDigits: 1, locale: ptBR) == "0,2%")
     }
+
+    @Test func freshnessSeparatesQuoteTimeFromCheckTime() {
+        let quoteTime = Date(timeIntervalSince1970: 1_794_931_646)
+        #expect(RateFormat.freshness(quoteTime: quoteTime, checkedAt: quoteTime + 120) == .live(quoteTime))
+        #expect(RateFormat.freshness(quoteTime: quoteTime, checkedAt: nil) == .live(quoteTime))
+        let later = quoteTime + 3 * 3600
+        #expect(RateFormat.freshness(quoteTime: quoteTime, checkedAt: later) == .published(quoteTime, checked: later))
+    }
+
+    @Test func clockTimeAddsWeekdayWhenNotToday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Sao_Paulo")!
+        let tuesday = calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 16, minute: 17))!
+        let friday = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 13, minute: 3))!
+        #expect(RateFormat.clockTime(tuesday, relativeTo: tuesday, locale: ptBR, calendar: calendar) == "16:17")
+        let earlier = RateFormat.clockTime(friday, relativeTo: tuesday, locale: ptBR, calendar: calendar)
+        #expect(earlier.hasSuffix("13:03"))
+        #expect(earlier.lowercased().hasPrefix("sex"))
+    }
 }

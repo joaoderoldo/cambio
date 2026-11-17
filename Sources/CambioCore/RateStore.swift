@@ -12,6 +12,9 @@ public final class RateStore {
     public private(set) var quotes: [CurrencyPair: Quote] = [:]
     public private(set) var catalog: Catalog
     public private(set) var isOffline = false
+    /// When the network last answered in this session. Differs from the quote's own time for
+    /// rates published once a day (PTAX) or outside market hours.
+    public private(set) var lastChecked: Date?
     public private(set) var isRunning = false
     public var isLoading: Bool { inFlight > 0 }
 
@@ -87,6 +90,7 @@ public final class RateStore {
         quote = latest
         isOffline = false
         lastSuccess = now()
+        lastChecked = lastSuccess
         Self.save(latest, to: defaults, key: Key.quote)
 
         let historyIsFresh = lastHistorySuccess.map { now().timeIntervalSince($0) < 3600 } ?? false

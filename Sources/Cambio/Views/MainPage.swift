@@ -80,7 +80,13 @@ struct MainPage: View {
                 if store.quote != nil { Text(verbatim: "·") }
             }
             if let quote = store.quote {
-                Text("Updated at \(quote.timestamp.formatted(date: .omitted, time: .shortened))")
+                switch RateFormat.freshness(quoteTime: quote.timestamp, checkedAt: store.lastChecked) {
+                case .live(let time):
+                    Text("Updated at \(RateFormat.clockTime(time))")
+                case .published(let time, let checked):
+                    // e.g. PTAX, published once a day: show that Refresh did check.
+                    Text("Rate from \(RateFormat.clockTime(time)) · checked \(RateFormat.clockTime(checked))")
+                }
             }
         }
         .font(.system(size: 11))

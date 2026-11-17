@@ -33,6 +33,9 @@ extension Catalog {
     /// The system's name for ISO currencies (so it follows the UI language),
     /// then the API's name (e.g. BRLT, BRLPTAX), then the code itself.
     public func displayName(for code: String, locale: Locale = .current) -> String {
+        if let special = Self.specialNames[code] {
+            return locale.language.languageCode == .portuguese ? special.portuguese : special.english
+        }
         if let localized = locale.localizedString(forCurrencyCode: code),
            localized.caseInsensitiveCompare(code) != .orderedSame {
             return localized
@@ -52,6 +55,12 @@ extension Catalog {
                 || country.map { fold($0, locale: locale).contains(needle) } == true
         }
     }
+
+    /// The API calls PTAX and the tourism rate plain "Real Brasileiro"; say what they are.
+    private static let specialNames: [String: (english: String, portuguese: String)] = [
+        "BRLPTAX": ("Brazilian Real (PTAX)", "Real (PTAX)"),
+        "BRLT": ("Brazilian Real (tourism)", "Real turismo"),
+    ]
 
     private var parsedPairs: [CurrencyPair] {
         pairs.compactMap(CurrencyPair.init(id:))

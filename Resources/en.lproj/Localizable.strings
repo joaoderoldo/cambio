@@ -59,3 +59,4 @@
 "No fees" = "No fees";
 "No live commercial rate right now" = "No live commercial rate right now";
 "Type the rate the platform is showing. Cambio compares it with this minute's commercial rate." = "Type the rate the platform is showing. Cambio compares it with this minute's commercial rate.";
+"Rate from %@ · checked %@" = "Rate from %@ · checked %@";

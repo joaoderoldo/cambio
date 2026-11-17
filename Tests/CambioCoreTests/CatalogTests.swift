@@ -5,7 +5,7 @@ import Testing
 struct CatalogTests {
     let catalog = Catalog(
         pairs: ["USD-BRL", "USD-BRLT", "USD-EUR", "EUR-BRL", "BRL-USD"],
-        apiNames: ["USD": "Dólar Americano", "BRL": "Real Brasileiro", "BRLT": "Real Brasileiro Turismo", "EUR": "Euro"]
+        apiNames: ["USD": "Dólar Americano", "BRL": "Real Brasileiro", "BRLT": "Real Brasileiro Turismo", "EUR": "Euro", "BTC": "Bitcoin"]
     )
 
     @Test func catalogQueries() {
@@ -18,7 +18,7 @@ struct CatalogTests {
 
     @Test func displayNames() {
         #expect(catalog.displayName(for: "USD", locale: enUS) == "US Dollar")
-        #expect(catalog.displayName(for: "BRLT", locale: enUS) == "Real Brasileiro Turismo")
+        #expect(catalog.displayName(for: "BTC", locale: enUS) == "Bitcoin")
         #expect(catalog.displayName(for: "ZZZ", locale: enUS) == "ZZZ")
     }
 
@@ -35,5 +35,13 @@ struct CatalogTests {
         #expect(catalog.search(codes, query: "estados unidos", locale: ptBR) == ["USD"])
         #expect(catalog.search(codes, query: "Suíça", locale: ptBR) == ["CHF"])
         #expect(catalog.search(codes, query: "europe", locale: enUS) == ["EUR"])
+    }
+
+    @Test func brazilianSpecialRatesHaveClearNames() {
+        // The API names PTAX "Real Brasileiro", which makes it look like the commercial rate.
+        #expect(catalog.displayName(for: "BRLPTAX", locale: ptBR) == "Real (PTAX)")
+        #expect(catalog.displayName(for: "BRLPTAX", locale: enUS) == "Brazilian Real (PTAX)")
+        #expect(catalog.displayName(for: "BRLT", locale: ptBR) == "Real turismo")
+        #expect(catalog.displayName(for: "BRLT", locale: enUS) == "Brazilian Real (tourism)")
     }
 }
