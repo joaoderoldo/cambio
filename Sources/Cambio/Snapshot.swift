@@ -13,15 +13,15 @@ enum Snapshot {
         await store.refresh()
         let launchAtLogin = LaunchAtLogin(forced: true)
 
-        let shots: [(name: String, scheme: ColorScheme, page: PanelView.Page, slot: PickerPage.Slot)] = [
-            ("main-light", .light, .main, .base),
-            ("main-dark", .dark, .main, .base),
-            ("picker-light", .light, .picker, .base),
-            ("picker-dark", .dark, .picker, .quote),
+        let shots: [(name: String, scheme: ColorScheme, path: [PanelRoute], slot: PickerPage.Slot)] = [
+            ("main-light", .light, [], .base),
+            ("main-dark", .dark, [], .base),
+            ("picker-light", .light, [.picker], .base),
+            ("picker-dark", .dark, [.picker], .quote),
         ]
         for shot in shots {
             let dark = shot.scheme == .dark
-            let scene = PanelView(store: store, launchAtLogin: launchAtLogin, page: shot.page, pickerSlot: shot.slot)
+            let scene = PanelView(store: store, launchAtLogin: launchAtLogin, path: shot.path, pickerSlot: shot.slot)
                 .background(dark ? Color(red: 0.165, green: 0.165, blue: 0.175) : Color(red: 0.965, green: 0.965, blue: 0.965))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(

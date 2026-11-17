@@ -1,11 +1,13 @@
 import CambioCore
 import SwiftUI
 
-/// Second page of the panel: pick FROM, then TO, from the pairs the API actually offers.
+/// Pick FROM, then TO, from the pairs the API actually offers. Used for the menu bar pair
+/// and for a platform's pair; `onSelect` decides what a chosen pair means.
 struct PickerPage: View {
     enum Slot { case base, quote }
 
     let store: RateStore
+    let onSelect: (CurrencyPair) -> Void
     let close: () -> Void
     @State private var slot: Slot
     @State private var draftBase: String
@@ -15,19 +17,24 @@ struct PickerPage: View {
 
     private static let spring = Animation.spring(response: 0.3, dampingFraction: 1)
 
-    init(store: RateStore, close: @escaping () -> Void, slot: Slot = .base) {
+    init(
+        store: RateStore,
+        initial: CurrencyPair,
+        slot: Slot = .base,
+        onSelect: @escaping (CurrencyPair) -> Void,
+        close: @escaping () -> Void
+    ) {
         self.store = store
+        self.onSelect = onSelect
         self.close = close
         _slot = State(initialValue: slot)
-        _draftBase = State(initialValue: store.pair.base)
-        _draftQuote = State(initialValue: store.pair.quote)
+        _draftBase = State(initialValue: initial.base)
+        _draftQuote = State(initialValue: initial.quote)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            navigationBar
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
+            NavBar("Currency", back: close)
             slots
                 .padding(.horizontal, 14)
                 .padding(.top, 6)
@@ -45,22 +52,6 @@ struct PickerPage: View {
     }
 
     // MARK: Header
-
-    private var navigationBar: some View {
-        ZStack {
-            Text("Currency").font(.system(size: 13, weight: .semibold))
-            HStack {
-                Button(action: close) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(IconButtonStyle())
-                .accessibilityLabel(Text("Currency"))
-                Spacer()
-            }
-        }
-    }
 
     private var slots: some View {
         ZStack {
@@ -99,7 +90,7 @@ struct PickerPage: View {
                 draftBase = quote
                 draftQuote = base
             }
-            Task { await store.select(CurrencyPair(base: quote, quote: base)) }
+            onSelect(CurrencyPair(base: quote, quote: base))
         } label: {
             Image(systemName: "arrow.left.arrow.right")
                 .font(.system(size: 10, weight: .bold))
@@ -221,12 +212,11 @@ struct PickerPage: View {
                 query = ""
             }
             if let keptQuote {
-                Task { await store.select(CurrencyPair(base: code, quote: keptQuote)) }
+                onSelect(CurrencyPair(base: code, quote: keptQuote))
             }
         case .quote:
             draftQuote = code
-            let pair = CurrencyPair(base: draftBase, quote: code)
-            Task { await store.select(pair) }
+            onSelect(CurrencyPair(base: draftBase, quote: code))
             close()
         }
     }
