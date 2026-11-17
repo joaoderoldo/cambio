@@ -8,6 +8,8 @@ public final class RateStore {
     public private(set) var pair: CurrencyPair
     public private(set) var quote: Quote?
     public private(set) var history: [DailyPoint] = []
+    /// Latest quotes for the bar's pair and every extra pair (the platforms' pairs).
+    public private(set) var quotes: [CurrencyPair: Quote] = [:]
     public private(set) var catalog: Catalog
     public private(set) var isOffline = false
     public private(set) var isRunning = false
@@ -17,6 +19,7 @@ public final class RateStore {
     @ObservationIgnored private let client: any RateFetching
     @ObservationIgnored private let defaults: any SettingsStore
     @ObservationIgnored private let now: @Sendable () -> Date
+    @ObservationIgnored private let extraPairs: @MainActor () -> Set<CurrencyPair>
     @ObservationIgnored private var lastSuccess: Date?
     @ObservationIgnored private var lastHistorySuccess: Date?
     @ObservationIgnored private var lastCatalogSuccess: Date?
@@ -33,11 +36,13 @@ public final class RateStore {
     public init(
         client: any RateFetching,
         defaults: any SettingsStore = UserDefaults.standard,
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        extraPairs: @escaping @MainActor () -> Set<CurrencyPair> = { [] }
     ) {
         self.client = client
         self.defaults = defaults
         self.now = now
+        self.extraPairs = extraPairs
         let pair = defaults.string(forKey: Key.pair).flatMap(CurrencyPair.init(id:)) ?? .usdBrl
         let cached = Self.load(Quote.self, from: defaults, key: Key.quote)
         self.pair = pair
@@ -55,14 +60,26 @@ public final class RateStore {
         inFlight += 1
         defer { inFlight -= 1 }
 
-        let latest: Quote
+        // The bar's pair first, then the platforms' pairs, in one request. One unknown pair
+        // fails the whole batch, so fall back to the bar's pair alone: the bar must keep working.
+        let batch = [requested] + extraPairs().subtracting([requested]).sorted { $0.id < $1.id }
+        var fetched: [CurrencyPair: Quote]
         do {
-            latest = try await client.latest(requested)
+            fetched = try await client.latest(batch)
         } catch {
-            if current == generation, requested == pair { isOffline = true }
-            return
+            if batch.count > 1, let single = try? await client.latest([requested]) {
+                fetched = single
+            } else {
+                if current == generation, requested == pair { isOffline = true }
+                return
+            }
         }
         guard current == generation, requested == pair else { return }
+        guard let latest = fetched[requested] else {
+            isOffline = true
+            return
+        }
+        quotes.merge(fetched) { _, new in new }
         quote = latest
         isOffline = false
         lastSuccess = now()
@@ -74,6 +91,11 @@ public final class RateStore {
             history = points
             lastHistorySuccess = now()
         }
+    }
+
+    /// The latest quote for any pair in use: the bar's own, or a platform's.
+    public func quote(for pair: CurrencyPair) -> Quote? {
+        pair == self.pair ? quote : quotes[pair]
     }
 
     /// Refreshes unless the last successful fetch is younger than `seconds`.

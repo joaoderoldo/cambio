@@ -12,7 +12,13 @@ public enum AwesomeAPI {
     public static let namesURL = host.appending(path: "json/available/uniq")
 
     public static func latestURL(for pair: CurrencyPair) -> URL {
-        host.appending(path: "json/last/\(pair.id)")
+        latestURL(for: [pair])
+    }
+
+    /// Several pairs in one request, e.g. `/json/last/USD-BRL,EUR-BRL`. One unknown pair
+    /// makes the whole request fail with 404.
+    public static func latestURL(for pairs: [CurrencyPair]) -> URL {
+        host.appending(path: "json/last/\(pairs.map(\.id).joined(separator: ","))")
     }
 
     public static func historyURL(for pair: CurrencyPair, days: Int) -> URL {
@@ -33,6 +39,22 @@ public enum AwesomeAPI {
         guard let raw = entries[pair.responseKey] else {
             throw Failure.missingPair(pair.responseKey)
         }
+        return try quote(from: raw, pair: pair)
+    }
+
+    /// Quotes for the pairs present in a batched response; absent pairs are left out.
+    public static func decodeLatest(_ data: Data, pairs: [CurrencyPair]) throws -> [CurrencyPair: Quote] {
+        let entries = try JSONDecoder().decode([String: Raw].self, from: data)
+        var quotes: [CurrencyPair: Quote] = [:]
+        for pair in pairs {
+            if let raw = entries[pair.responseKey] {
+                quotes[pair] = try quote(from: raw, pair: pair)
+            }
+        }
+        return quotes
+    }
+
+    private static func quote(from raw: Raw, pair: CurrencyPair) throws -> Quote {
         let bid = try number(raw.bid, field: "bid")
         return Quote(
             pair: pair,

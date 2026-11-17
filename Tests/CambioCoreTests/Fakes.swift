@@ -15,13 +15,19 @@ actor FakeClient: RateFetching {
     /// Scripted behavior for the next `latest` calls, in order: wait, then fail or succeed.
     private var script: [(delay: Duration, fail: Bool)] = []
 
+    /// Pairs the "API" does not know: a batch containing any of them fails whole (HTTP 404).
+    var unknownPairs: Set<CurrencyPair> = []
+    private(set) var batches: [[CurrencyPair]] = []
+
+    func setUnknownPairs(_ pairs: Set<CurrencyPair>) { unknownPairs = pairs }
     func setScript(_ steps: [(delay: Duration, fail: Bool)]) { script = steps }
     func setFailLatest(_ value: Bool) { failLatest = value }
     func setFailHistory(_ value: Bool) { failHistory = value }
     func setCatalog(_ value: Catalog?) { catalogToReturn = value }
 
-    func latest(_ pair: CurrencyPair) async throws -> Quote {
+    func latest(_ pairs: [CurrencyPair]) async throws -> [CurrencyPair: Quote] {
         latestCalls += 1
+        batches.append(pairs)
         if !script.isEmpty {
             let step = script.removeFirst()
             try? await Task.sleep(for: step.delay)
@@ -29,8 +35,13 @@ actor FakeClient: RateFetching {
         } else if failLatest {
             throw Offline()
         }
-        return Quote(pair: pair, bid: bid, high: bid + 0.03, low: bid - 0.02, changePercent: -0.13,
-                     timestamp: Date(timeIntervalSince1970: 1_794_925_571))
+        if pairs.contains(where: unknownPairs.contains) { throw URLError(.badServerResponse) }
+        var quotes: [CurrencyPair: Quote] = [:]
+        for pair in pairs {
+            quotes[pair] = Quote(pair: pair, bid: bid, high: bid + 0.03, low: bid - 0.02, changePercent: -0.13,
+                                 timestamp: Date(timeIntervalSince1970: 1_794_925_571))
+        }
+        return quotes
     }
 
     func history(_ pair: CurrencyPair, days: Int) async throws -> [DailyPoint] {

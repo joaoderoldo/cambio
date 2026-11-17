@@ -43,4 +43,13 @@ struct RateClientTests {
         #expect(catalog.pairs == ["USD-BRL"])
         #expect(Set(await log.requests.compactMap(\.url)) == [AwesomeAPI.pairsURL, AwesomeAPI.namesURL])
     }
+
+    @Test func clientBatchUsesOneRequest() async throws {
+        let log = RequestLog()
+        let json = #"{"USDBRL":{"bid":"5.776","high":"5.81","low":"5.75","pctChange":"-0.1","timestamp":"1794925571"},"EURBRL":{"bid":"6.71","high":"6.75","low":"6.69","pctChange":"0.2","timestamp":"1794925571"}}"#
+        let client = AwesomeAPIClient(load: respond(200, json, log: log))
+        let quotes = try await client.latest([.usdBrl, CurrencyPair(base: "EUR", quote: "BRL")])
+        #expect(quotes.count == 2)
+        #expect(await log.requests.count == 1)
+    }
 }

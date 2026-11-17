@@ -64,4 +64,19 @@ struct AwesomeAPITests {
         #expect(catalog.pairs == ["USD-BRL", "USD-BRLT"])
         #expect(catalog.apiNames["BRLT"] == "Real Brasileiro Turismo")
     }
+
+    @Test func decodesBatch() throws {
+        let json = #"{"USDBRL":{"bid":"5.776","high":"5.81","low":"5.75","pctChange":"-0.1","timestamp":"1794925571"},"EURBRL":{"bid":"6.71","high":"6.75","low":"6.69","pctChange":"0.2","timestamp":"1794925571"}}"#
+        let eurBrl = CurrencyPair(base: "EUR", quote: "BRL")
+        let quotes = try AwesomeAPI.decodeLatest(Data(json.utf8), pairs: [.usdBrl, eurBrl])
+        #expect(quotes.count == 2)
+        #expect(quotes[eurBrl]?.bid == 6.71)
+        let partial = try AwesomeAPI.decodeLatest(Data(json.utf8), pairs: [.usdBrl, CurrencyPair(base: "XYZ", quote: "BRL")])
+        #expect(partial.keys.map(\.id) == ["USD-BRL"])
+    }
+
+    @Test func batchURL() {
+        let url = AwesomeAPI.latestURL(for: [.usdBrl, CurrencyPair(base: "EUR", quote: "BRL")])
+        #expect(url.absoluteString == "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL")
+    }
 }

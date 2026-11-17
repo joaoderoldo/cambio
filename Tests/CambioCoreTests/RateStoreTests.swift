@@ -9,9 +9,28 @@ struct RateStoreTests {
     let defaults = InMemorySettings()
     let eurBrl = CurrencyPair(base: "EUR", quote: "BRL")
 
-    func makeStore(defaults: InMemorySettings? = nil) -> RateStore {
+    func makeStore(defaults: InMemorySettings? = nil, extraPairs: Set<CurrencyPair> = []) -> RateStore {
         let clock = self.clock
-        return RateStore(client: client, defaults: defaults ?? self.defaults, now: { clock.now })
+        return RateStore(client: client, defaults: defaults ?? self.defaults, now: { clock.now }, extraPairs: { extraPairs })
+    }
+
+    @Test func refreshFetchesExtraPairs() async {
+        let store = makeStore(extraPairs: [eurBrl])
+        await store.refresh()
+        #expect(store.quote(for: eurBrl)?.pair == eurBrl)
+        #expect(store.quote(for: .usdBrl) == store.quote)
+        #expect(await client.batches.last == [.usdBrl, eurBrl])
+    }
+
+    @Test func badExtraPairFallsBack() async {
+        let unknown = CurrencyPair(base: "XYZ", quote: "BRL")
+        await client.setUnknownPairs([unknown])
+        let store = makeStore(extraPairs: [unknown])
+        await store.refresh()
+        #expect(store.quote != nil)
+        #expect(!store.isOffline)
+        #expect(store.quote(for: unknown) == nil)
+        #expect(await client.batches == [[.usdBrl, unknown], [.usdBrl]])
     }
 
     @Test func refreshSuccess() async {
