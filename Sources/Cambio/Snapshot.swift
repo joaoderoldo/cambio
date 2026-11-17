@@ -7,7 +7,8 @@ import SwiftUI
 enum Snapshot {
     static func render(to directory: URL) async {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let store = RateStore(client: AwesomeAPIClient(), defaults: UserDefaults(suiteName: "cambio.snapshot")!)
+        // In-memory settings, so screenshots never touch the real ones or write files.
+        let store = RateStore(client: AwesomeAPIClient(), defaults: InMemorySettings())
         await store.loadCatalog()
         await store.refresh()
         let launchAtLogin = LaunchAtLogin(forced: true)

@@ -15,7 +15,7 @@ public final class RateStore {
 
     private var inFlight = 0
     @ObservationIgnored private let client: any RateFetching
-    @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private let defaults: any SettingsStore
     @ObservationIgnored private let now: @Sendable () -> Date
     @ObservationIgnored private var lastSuccess: Date?
     @ObservationIgnored private var loop: Task<Void, Never>?
@@ -28,7 +28,7 @@ public final class RateStore {
 
     public init(
         client: any RateFetching,
-        defaults: UserDefaults = .standard,
+        defaults: any SettingsStore = UserDefaults.standard,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.client = client
@@ -113,11 +113,11 @@ public final class RateStore {
         isRunning = false
     }
 
-    private static func load<T: Decodable>(_ type: T.Type, from defaults: UserDefaults, key: String) -> T? {
+    private static func load<T: Decodable>(_ type: T.Type, from defaults: any SettingsStore, key: String) -> T? {
         defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(type, from: $0) }
     }
 
-    private static func save<T: Encodable>(_ value: T, to defaults: UserDefaults, key: String) {
+    private static func save<T: Encodable>(_ value: T, to defaults: any SettingsStore, key: String) {
         if let data = try? JSONEncoder().encode(value) {
             defaults.set(data, forKey: key)
         }

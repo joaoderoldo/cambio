@@ -37,7 +37,3 @@ actor FakeClient: RateFetching {
 final class TestClock: @unchecked Sendable {
     var now = Date(timeIntervalSince1970: 1_794_925_600)
 }
-
-func freshDefaults() -> UserDefaults {
-    UserDefaults(suiteName: "cambio-tests-\(UUID().uuidString)")!
-}

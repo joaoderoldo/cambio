@@ -6,10 +6,10 @@ import Testing
 struct RateStoreTests {
     let client = FakeClient()
     let clock = TestClock()
-    let defaults = freshDefaults()
+    let defaults = InMemorySettings()
     let eurBrl = CurrencyPair(base: "EUR", quote: "BRL")
 
-    func makeStore(defaults: UserDefaults? = nil) -> RateStore {
+    func makeStore(defaults: InMemorySettings? = nil) -> RateStore {
         let clock = self.clock
         return RateStore(client: client, defaults: defaults ?? self.defaults, now: { clock.now })
     }
