@@ -58,7 +58,7 @@ Requer macOS 14 Sonoma ou superior. Roda nativo em Apple Silicon e Intel.
 Você precisa de macOS 14+ e Xcode 16+ (Swift 6).
 
 ```bash
-git clone <URL deste repositório> cambio
+git clone https://github.com/joaoderoldo/cambio.git
 cd cambio
 make install
 ```
