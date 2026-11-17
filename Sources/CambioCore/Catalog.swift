@@ -40,13 +40,16 @@ extension Catalog {
         return apiNames[code] ?? code
     }
 
-    /// Keeps the codes whose code or name contains `query`, ignoring case and accents.
+    /// Keeps the codes whose code, currency name or country name contains `query`,
+    /// ignoring case and accents ("mexico" finds MXN, "suíça" finds CHF, "europe" finds EUR).
     public func search(_ codes: [String], query: String, locale: Locale = .current) -> [String] {
         let needle = fold(query.trimmingCharacters(in: .whitespacesAndNewlines), locale: locale)
         guard !needle.isEmpty else { return codes }
         return codes.filter { code in
-            fold(code, locale: locale).contains(needle)
+            let country = CurrencyArt.region(for: code).flatMap { locale.localizedString(forRegionCode: $0) }
+            return fold(code, locale: locale).contains(needle)
                 || fold(displayName(for: code, locale: locale), locale: locale).contains(needle)
+                || country.map { fold($0, locale: locale).contains(needle) } == true
         }
     }
 

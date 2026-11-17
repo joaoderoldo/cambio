@@ -3,12 +3,16 @@ import Foundation
 /// Number formatting for the menu bar and the panel. Every function takes a locale so the
 /// decimal separator follows the system and tests stay deterministic.
 public enum RateFormat {
-    /// Bar (`compact`) and panel precision, by magnitude: ≥1000 → 0/2, ≥1 → 2/4, <1 → 4/6.
+    /// Bar (`compact`) and panel precision, by magnitude: ≥1000 → 0/2, ≥1 → 2/4. Below 1,
+    /// about 3 (bar) or 5 (panel) significant digits, at least 4/6 and at most 10, so tiny
+    /// rates such as IRR→USD (0.00000053) never collapse to zeros.
     public static func fractionDigits(for value: Double, compact: Bool) -> Int {
         let magnitude = abs(value)
         if magnitude >= 1000 { return compact ? 0 : 2 }
-        if magnitude >= 1 { return compact ? 2 : 4 }
-        return compact ? 4 : 6
+        if magnitude >= 1 || magnitude == 0 || !magnitude.isFinite { return compact ? 2 : 4 }
+        let leadingZeros = Int(floor(-log10(magnitude)))
+        let digits = compact ? max(4, leadingZeros + 3) : max(6, leadingZeros + 5)
+        return min(digits, 10)
     }
 
     public static func number(_ value: Double, fractionDigits: Int, locale: Locale = .current) -> String {

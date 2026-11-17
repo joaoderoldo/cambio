@@ -87,6 +87,14 @@ O código é dividido em duas partes:
 
 As notas de design estão em [`docs/design.md`](docs/design.md).
 
+## Contribuir
+
+Issues e pull requests são bem-vindos. Antes de abrir um PR:
+
+1. Rode `make test`. A lógica fica no `CambioCore`, e todo comportamento ali tem teste.
+2. Para mudanças de interface, rode `make screenshots` e confira os dois idiomas, claro e escuro.
+3. Mantenha simples: a ideia do Cambio é continuar sendo um número na barra de menu.
+
 ## Privacidade
 
 O Cambio só conversa com `economia.awesomeapi.com.br`. Sem conta, sem analytics, sem

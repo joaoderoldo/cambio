@@ -11,7 +11,7 @@ struct CambioApp: App {
         store.start()
         _store = State(initialValue: store)
 
-        // After sleep the 60 s timer may be far behind; refresh as soon as the network is back.
+        // On wake the timer fires at once, usually before Wi-Fi is back. Try again a moment later.
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { _ in

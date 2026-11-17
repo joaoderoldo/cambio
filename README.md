@@ -85,6 +85,14 @@ The code is split in two:
 
 The design notes live in [`docs/design.md`](docs/design.md).
 
+## Contributing
+
+Issues and pull requests are welcome. Before opening a PR:
+
+1. Run `make test`. Logic lives in `CambioCore` and every behavior there has a test.
+2. For UI changes, run `make screenshots` and look at both languages, light and dark.
+3. Keep it small: Cambio is meant to stay one number in the menu bar.
+
 ## Privacy
 
 Cambio talks only to `economia.awesomeapi.com.br`. No account, no analytics, no tracking.

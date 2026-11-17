@@ -7,7 +7,7 @@ struct CurrencyArtTests {
         #expect(CurrencyArt.flag(for: code) == flag)
     }
 
-    @Test(arguments: ["BTC", "XAU", "XCD", "DOGE"])
+    @Test(arguments: ["BTC", "XAU", "XCD", "DOGE", "SOL", "BNB", "USDT", "SDR", "XBR"])
     func noFlag(code: String) {
         #expect(CurrencyArt.flag(for: code) == nil)
     }
@@ -15,6 +15,8 @@ struct CurrencyArtTests {
     @Test func badges() {
         #expect(CurrencyArt.badge(for: "BTC").symbol == "₿")
         #expect(CurrencyArt.badge(for: "XAU").symbol == "Au")
+        #expect(CurrencyArt.badge(for: "SOL").symbol == "◎")
+        #expect(CurrencyArt.badge(for: "USDT").symbol == "₮")
         let generic = CurrencyArt.badge(for: "ANG")
         #expect(generic.symbol == "A")
         #expect(generic.red == 0.55 && generic.green == 0.55 && generic.blue == 0.55)

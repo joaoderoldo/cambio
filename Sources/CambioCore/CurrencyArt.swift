@@ -26,6 +26,11 @@ public enum CurrencyArt {
         "XRP": Badge(symbol: "✕", red: 0.14, green: 0.16, blue: 0.18),
         "DOGE": Badge(symbol: "Ð", red: 0.76, green: 0.65, blue: 0.20),
         "BRETT": Badge(symbol: "B", red: 0.25, green: 0.45, blue: 0.95),
+        "SOL": Badge(symbol: "◎", red: 0.58, green: 0.27, blue: 0.98),
+        "BNB": Badge(symbol: "B", red: 0.95, green: 0.73, blue: 0.18),
+        "USDT": Badge(symbol: "₮", red: 0.15, green: 0.63, blue: 0.48),
+        "SDR": Badge(symbol: "S", red: 0.40, green: 0.45, blue: 0.55),
+        "XBR": Badge(symbol: "Br", red: 0.20, green: 0.20, blue: 0.22),
         "XAU": Badge(symbol: "Au", red: 0.83, green: 0.69, blue: 0.22),
         "XAG": Badge(symbol: "Ag", red: 0.62, green: 0.63, blue: 0.66),
         "XAGG": Badge(symbol: "Ag", red: 0.62, green: 0.63, blue: 0.66),
@@ -33,18 +38,25 @@ public enum CurrencyArt {
 
     private static let regions: Set<String> = Set(Locale.Region.isoRegions.map(\.identifier))
 
-    /// ISO 4217 codes start with the issuing country's ISO 3166 code, so `BRL`, `BRLT` and
-    /// `BRLPTAX` all map to 🇧🇷. Supranational `X…` codes and crypto have no flag.
-    public static func flag(for code: String) -> String? {
+    /// The issuing region. ISO 4217 codes start with the country's ISO 3166 code, so `BRL`,
+    /// `BRLT` and `BRLPTAX` all map to BR, and EUR maps to EU. Crypto, metals and other
+    /// supranational `X…` codes have none.
+    public static func region(for code: String) -> String? {
         if badges[code] != nil { return nil }
-        if code == "EUR" { return "🇪🇺" }
+        if code == "EUR" { return "EU" }
         if code.hasPrefix("X") { return nil }
         let region = String(code.prefix(2)).uppercased()
         guard region.count == 2, regions.contains(region) else { return nil }
-        return region.unicodeScalars
-            .compactMap { UnicodeScalar(127_397 + $0.value) }
-            .map(String.init)
-            .joined()
+        return region
+    }
+
+    public static func flag(for code: String) -> String? {
+        region(for: code).map { region in
+            region.unicodeScalars
+                .compactMap { UnicodeScalar(127_397 + $0.value) }
+                .map(String.init)
+                .joined()
+        }
     }
 
     public static func badge(for code: String) -> Badge {

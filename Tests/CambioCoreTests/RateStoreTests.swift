@@ -33,12 +33,40 @@ struct RateStoreTests {
     }
 
     @Test func historyFailureIsNotOffline() async {
+        await client.setFailHistory(true)
         let store = makeStore()
         await store.refresh()
-        await client.setFailHistory(true)
+        #expect(!store.isOffline)
+        #expect(store.quote != nil)
+        #expect(store.history.isEmpty)
+        await client.setFailHistory(false)
+        await store.refresh()
+        #expect(store.history.count == 2)
+    }
+
+    @Test func historyIsFetchedAtMostHourly() async {
+        let store = makeStore()
+        await store.refresh()
+        await store.refresh()
+        #expect(await client.historyCalls == 1)
+        clock.now += 3601
+        await store.refresh()
+        #expect(await client.historyCalls == 2)
+        await store.select(eurBrl)
+        #expect(await client.historyCalls == 3)
+    }
+
+    @Test func overlappingRefreshLatestWins() async throws {
+        // An older request that fails late must not mark fresh data as offline.
+        await client.setScript([(delay: .milliseconds(300), fail: true), (delay: .zero, fail: false)])
+        let store = makeStore()
+        async let slow: Void = store.refresh()
+        try await Task.sleep(for: .milliseconds(50))
         await store.refresh()
         #expect(!store.isOffline)
-        #expect(store.history.count == 2)
+        await slow
+        #expect(!store.isOffline)
+        #expect(store.quote != nil)
     }
 
     @Test func firstLaunchOffline() async {
@@ -92,6 +120,22 @@ struct RateStoreTests {
         #expect(store.pair == .usdBrl)
         #expect(store.catalog.pairs == ["USD-BRL", "EUR-BRL"])
         #expect(makeStore().catalog.pairs == ["USD-BRL", "EUR-BRL"])
+    }
+
+    @Test func catalogRetriesUntilLoadedThenDaily() async {
+        // Launch at login often starts before Wi-Fi: the first catalog fetch fails.
+        defaults.set("XYZ-BRL", forKey: "cambio.pair")
+        let store = makeStore()
+        await store.loadCatalogIfNeeded()
+        #expect(store.pair == CurrencyPair(base: "XYZ", quote: "BRL"))
+        await client.setCatalog(Catalog(pairs: ["USD-BRL"], apiNames: [:]))
+        await store.loadCatalogIfNeeded()
+        #expect(store.pair == .usdBrl)
+        await store.loadCatalogIfNeeded()
+        #expect(await client.catalogCalls == 2)
+        clock.now += 25 * 3600
+        await store.loadCatalogIfNeeded()
+        #expect(await client.catalogCalls == 3)
     }
 
     @Test func catalogFailureKeepsPair() async {

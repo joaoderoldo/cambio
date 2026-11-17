@@ -18,6 +18,10 @@ public final class RateStore {
     @ObservationIgnored private let defaults: any SettingsStore
     @ObservationIgnored private let now: @Sendable () -> Date
     @ObservationIgnored private var lastSuccess: Date?
+    @ObservationIgnored private var lastHistorySuccess: Date?
+    @ObservationIgnored private var lastCatalogSuccess: Date?
+    /// Only the most recently started refresh may change state; older ones finish silently.
+    @ObservationIgnored private var generation = 0
     @ObservationIgnored private var loop: Task<Void, Never>?
 
     private enum Key {
@@ -41,10 +45,13 @@ public final class RateStore {
         self.catalog = Self.load(Catalog.self, from: defaults, key: Key.catalog) ?? .empty
     }
 
-    /// Fetches the latest quote, then the 30-day history. A failed quote keeps the last one
-    /// and marks the store offline; a failed history alone keeps the old chart.
+    /// Fetches the latest quote, then the 30-day history (at most hourly: it changes daily).
+    /// A failed quote keeps the last one and marks the store offline; a failed history alone
+    /// keeps the old chart. When refreshes overlap, only the newest one counts.
     public func refresh() async {
         let requested = pair
+        generation += 1
+        let current = generation
         inFlight += 1
         defer { inFlight -= 1 }
 
@@ -52,17 +59,20 @@ public final class RateStore {
         do {
             latest = try await client.latest(requested)
         } catch {
-            if requested == pair { isOffline = true }
+            if current == generation, requested == pair { isOffline = true }
             return
         }
-        guard requested == pair else { return }
+        guard current == generation, requested == pair else { return }
         quote = latest
         isOffline = false
         lastSuccess = now()
         Self.save(latest, to: defaults, key: Key.quote)
 
+        let historyIsFresh = lastHistorySuccess.map { now().timeIntervalSince($0) < 3600 } ?? false
+        guard history.isEmpty || !historyIsFresh else { return }
         if let points = try? await client.history(requested, days: 30), requested == pair {
             history = points
+            lastHistorySuccess = now()
         }
     }
 
@@ -72,9 +82,17 @@ public final class RateStore {
         await refresh()
     }
 
+    /// Loads the catalog unless one was loaded in this session less than `maxAge` ago.
+    /// Called every cycle, so a launch without network keeps retrying until it succeeds.
+    public func loadCatalogIfNeeded(maxAge: TimeInterval = 24 * 3600) async {
+        if let lastCatalogSuccess, now().timeIntervalSince(lastCatalogSuccess) < maxAge { return }
+        await loadCatalog()
+    }
+
     /// Loads the list of pairs. If the saved pair is no longer offered, falls back to USD-BRL.
     public func loadCatalog() async {
         guard let fetched = try? await client.catalog(), !fetched.pairs.isEmpty else { return }
+        lastCatalogSuccess = now()
         catalog = fetched
         Self.save(fetched, to: defaults, key: Key.catalog)
         if !fetched.contains(pair) {
@@ -88,6 +106,7 @@ public final class RateStore {
         quote = nil
         history = []
         lastSuccess = nil
+        lastHistorySuccess = nil
         defaults.set(newPair.id, forKey: Key.pair)
         defaults.removeObject(forKey: Key.quote)
         await refresh()
@@ -98,9 +117,9 @@ public final class RateStore {
         guard loop == nil else { return }
         isRunning = true
         loop = Task { [weak self] in
-            await self?.loadCatalog()
             while !Task.isCancelled {
                 guard let self else { return }
+                await self.loadCatalogIfNeeded()
                 await self.refresh()
                 try? await Task.sleep(for: interval)
             }

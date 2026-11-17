@@ -28,4 +28,12 @@ struct CatalogTests {
         #expect(catalog.search(codes, query: "brl", locale: ptBR) == ["BRL", "BRLT"])
         #expect(catalog.search(codes, query: "  ", locale: ptBR) == codes)
     }
+
+    @Test func searchMatchesCountryNames() {
+        let codes = ["USD", "MXN", "CHF", "EUR", "BRL", "BTC"]
+        #expect(catalog.search(codes, query: "Mexico", locale: enUS) == ["MXN"])
+        #expect(catalog.search(codes, query: "estados unidos", locale: ptBR) == ["USD"])
+        #expect(catalog.search(codes, query: "Suíça", locale: ptBR) == ["CHF"])
+        #expect(catalog.search(codes, query: "europe", locale: enUS) == ["EUR"])
+    }
 }

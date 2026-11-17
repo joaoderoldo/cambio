@@ -31,6 +31,14 @@ struct RateFormatTests {
         #expect(RateFormat.barText(base: "BTC", value: 512_345.6, changePercent: nil, locale: ptBR) == "BTC 512.346")
     }
 
+    @Test func tinyValuesKeepSignificantDigits() {
+        #expect(RateFormat.barText(base: "IRR", value: 5.3e-7, changePercent: nil, locale: ptBR) == "IRR 0,000000530")
+        #expect(RateFormat.barText(base: "VND", value: 0.0000389, changePercent: nil, locale: ptBR) == "VND 0,0000389")
+        #expect(RateFormat.barText(base: "PYG", value: 0.000156, changePercent: nil, locale: ptBR) == "PYG 0,000156")
+        #expect(RateFormat.fractionDigits(for: 5.3e-7, compact: false) == 10)
+        #expect(RateFormat.fractionDigits(for: 0, compact: true) == 2)
+    }
+
     @Test func pricePtBR() {
         #expect(plain(RateFormat.price(5.776, quote: "BRL", locale: ptBR)) == "R$ 5,7760")
         #expect(plain(RateFormat.price(5.776, quote: "BRLPTAX", locale: ptBR)).hasPrefix("R$"))
