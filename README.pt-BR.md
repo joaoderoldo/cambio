@@ -28,9 +28,38 @@ no topo da tela, sempre atualizado, e mais nada. Então fiz.
 - **Qualquer par que a fonte de dados oferece** (mais de 500): escolha DE e PARA, com
   bandeiras e busca. Inclui o dólar turismo (BRLT) e a PTAX (BRLPTAX).
 - **Sempre atualizado**: a cada minuto, logo que o Mac acorda e quando você abre o painel.
+- **Quanto vou receber?** Cadastre as plataformas pelas quais você recebe (Deel, Higlobe ou
+  a sua) e veja o câmbio real de cada uma ao lado do comercial, e quanto cai na sua conta
+  para qualquer valor.
 - **Funciona sem internet**: mantém a última cotação e avisa que está sem conexão.
 - **Abrir ao iniciar o Mac**, modo claro e escuro, português e inglês.
 - **Leve**: sem ícone no Dock, sem dependências, poucos MB.
+
+## Quanto vou receber?
+
+As plataformas de pagamento não convertem pela cotação do jornal. Cada uma cobra uma taxa
+e converte um pouco abaixo da comercial, e a diferença pesa.
+
+<p align="center">
+  <img src="docs/screenshots/pt-BR/calculator-light.png" width="380" alt="Quanto recebo: US$ 5.000 pela Higlobe e pela Deel">
+  <img src="docs/screenshots/pt-BR/edit-dark.png" width="380" alt="Editando as taxas de uma plataforma e ajustando pela cotação de agora">
+</p>
+
+O Cambio estima quanto cai na sua conta com:
+
+```
+recebe = (valor × (1 − taxa%) − taxa fixa) × cotação comercial × (1 − spread%)
+```
+
+- **Modelos** medidos em novembro de 2026 com saques reais:
+  - **Deel · Pix**: taxa de 1,2% e câmbio cerca de 1,0% abaixo do comercial.
+  - **Higlobe · Pix**: sem taxa e câmbio 0,2% abaixo do comercial.
+- **Plataformas personalizadas**: você define nome, moedas, taxas e spread.
+- **Ajuste pela cotação de agora**: digite o câmbio que a sua plataforma está mostrando.
+  O Cambio compara com o comercial do mesmo minuto e calcula o spread da sua conta.
+
+São estimativas. As plataformas mudam as taxas, e algumas só atualizam o câmbio de tempos
+em tempos, então confira na plataforma antes de mover o dinheiro.
 
 ## Instalação
 

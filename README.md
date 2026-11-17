@@ -27,9 +27,39 @@ the top of the screen, always up to date, and nothing else. So I built it.
 - **Any pair the data source offers** (over 500): pick FROM and TO, with flags and search.
   Includes Brazil's tourism rate (BRLT) and PTAX (BRLPTAX).
 - **Always fresh**: updates every minute, right after your Mac wakes up, and when you open the panel.
+- **How much will I receive?** Add the platforms you get paid through (Deel, Higlobe or
+  your own) and see each one's real rate next to the commercial one, plus how much lands in
+  your account for any amount.
 - **Works offline**: keeps the last rate and tells you it is offline.
 - **Open at login**, light and dark mode, English and Portuguese.
 - **Lightweight**: no Dock icon, no dependencies, a few MB.
+
+## How much will I receive?
+
+Payment platforms do not convert at the rate you see in the news. Each one takes a fee
+and converts a bit below the commercial rate, and the difference adds up.
+
+<p align="center">
+  <img src="docs/screenshots/en/calculator-light.png" width="380" alt="How much I receive: US$ 5,000 through Higlobe and Deel">
+  <img src="docs/screenshots/en/edit-dark.png" width="380" alt="Editing a platform's fees and adjusting from its current rate">
+</p>
+
+Cambio estimates what lands in your account with:
+
+```
+received = (amount × (1 − fee%) − fixed fee) × commercial rate × (1 − spread%)
+```
+
+- **Templates** measured in November 2026 from real withdrawals:
+  - **Deel · Pix**: 1.2% fee, rate about 1.0% below commercial.
+  - **Higlobe · Pix**: no fee, rate 0.2% below commercial.
+- **Custom platforms**: set the name, currencies, fees and spread yourself.
+- **Adjust from the current rate**: type the rate your platform is showing right now.
+  Cambio compares it with the commercial rate of the same minute and works out the spread
+  for your account.
+
+These are estimates. Platforms change their fees and some update their rate only from
+time to time, so check the platform before moving money.
 
 ## Install
 
