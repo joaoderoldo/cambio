@@ -48,4 +48,15 @@ struct RateFormatTests {
         #expect(RateFormat.percent(-0.138311, locale: ptBR) == "0,14%")
         #expect(RateFormat.percent(2.05738, locale: enUS) == "2.06%")
     }
+
+    @Test func moneyWithChosenDigits() {
+        #expect(plain(RateFormat.money(5.6574, code: "BRL", fractionDigits: 2, locale: ptBR)) == "R$ 5,66")
+        #expect(plain(RateFormat.money(28282.4, code: "BRL", fractionDigits: 0, locale: ptBR)) == "R$ 28.282")
+        #expect(plain(RateFormat.money(5.6574, code: "BRLPTAX", fractionDigits: 2, locale: ptBR)) == "R$ 5,66")
+    }
+
+    @Test func percentWithOneDecimal() {
+        #expect(RateFormat.percent(2.188, fractionDigits: 1, locale: ptBR) == "2,2%")
+        #expect(RateFormat.percent(-0.2, fractionDigits: 1, locale: ptBR) == "0,2%")
+    }
 }

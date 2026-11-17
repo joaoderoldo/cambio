@@ -32,12 +32,16 @@ public enum RateFormat {
 
     /// `"R$ 5,7760"`. Non-ISO quotes such as `BRLT` and `BRLPTAX` use their first three letters.
     public static func price(_ value: Double, quote: String, locale: Locale = .current) -> String {
-        let digits = fractionDigits(for: value, compact: false)
-        return value.formatted(.currency(code: String(quote.prefix(3))).precision(.fractionLength(digits)).locale(locale))
+        money(value, code: quote, fractionDigits: fractionDigits(for: value, compact: false), locale: locale)
     }
 
-    /// Absolute value with two decimals, e.g. `"0,14%"`. Direction is shown separately.
-    public static func percent(_ value: Double, locale: Locale = .current) -> String {
-        number(abs(value), fractionDigits: 2, locale: locale) + "%"
+    /// An amount in a currency with exactly `fractionDigits` decimals, e.g. `"R$ 28.282"`.
+    public static func money(_ value: Double, code: String, fractionDigits: Int, locale: Locale = .current) -> String {
+        value.formatted(.currency(code: String(code.prefix(3))).precision(.fractionLength(fractionDigits)).locale(locale))
+    }
+
+    /// Absolute value, e.g. `"0,14%"`. Direction is shown separately.
+    public static func percent(_ value: Double, fractionDigits: Int = 2, locale: Locale = .current) -> String {
+        number(abs(value), fractionDigits: fractionDigits, locale: locale) + "%"
     }
 }

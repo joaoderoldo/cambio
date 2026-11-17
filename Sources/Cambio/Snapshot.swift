@@ -8,20 +8,38 @@ enum Snapshot {
     static func render(to directory: URL) async {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         // In-memory settings, so screenshots never touch the real ones or write files.
-        let store = RateStore(client: AwesomeAPIClient(), defaults: InMemorySettings())
+        let platforms = PlatformStore(settings: InMemorySettings())
+        platforms.add(Platform.deelPix.instantiated())
+        platforms.add(Platform.higlobePix.instantiated())
+        platforms.calculatorAmount = 5000
+        let store = RateStore(client: AwesomeAPIClient(), defaults: InMemorySettings(), extraPairs: { platforms.pairs })
         await store.loadCatalog()
         await store.refresh()
         let launchAtLogin = LaunchAtLogin(forced: true)
+        let deel = platforms.platforms[0].id
 
         let shots: [(name: String, scheme: ColorScheme, path: [PanelRoute], slot: PickerPage.Slot)] = [
             ("main-light", .light, [], .base),
             ("main-dark", .dark, [], .base),
             ("picker-light", .light, [.picker], .base),
             ("picker-dark", .dark, [.picker], .quote),
+            ("calculator-light", .light, [.calculator], .base),
+            ("calculator-dark", .dark, [.calculator], .base),
+            ("platforms-light", .light, [.platforms], .base),
+            ("platforms-dark", .dark, [.platforms], .base),
+            ("edit-light", .light, [.edit(deel)], .base),
+            ("edit-dark", .dark, [.edit(deel)], .base),
         ]
         for shot in shots {
             let dark = shot.scheme == .dark
-            let scene = PanelView(store: store, launchAtLogin: launchAtLogin, path: shot.path, pickerSlot: shot.slot)
+            let scene = PanelView(
+                store: store,
+                launchAtLogin: launchAtLogin,
+                platforms: platforms,
+                path: shot.path,
+                pickerSlot: shot.slot,
+                exampleObservedRate: RateFormat.number(5.72386, fractionDigits: 5)
+            )
                 .background(dark ? Color(red: 0.165, green: 0.165, blue: 0.175) : Color(red: 0.965, green: 0.965, blue: 0.965))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(

@@ -172,3 +172,17 @@ extension EnvironmentValues {
         set { self[SnapshotKey.self] = newValue }
     }
 }
+
+/// A ScrollView live, plain clipped content in screenshots (ImageRenderer cannot draw scroll views).
+struct ScrollIfLive<Content: View>: View {
+    @Environment(\.isSnapshot) private var isSnapshot
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        if isSnapshot {
+            content.frame(minHeight: 0, maxHeight: .infinity, alignment: .top).clipped()
+        } else {
+            ScrollView { content }.scrollIndicators(.never)
+        }
+    }
+}

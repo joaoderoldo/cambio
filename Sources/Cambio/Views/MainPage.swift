@@ -5,7 +5,9 @@ import SwiftUI
 struct MainPage: View {
     let store: RateStore
     let launchAtLogin: LaunchAtLogin
+    let platforms: PlatformStore
     let openPicker: () -> Void
+    let openCalculator: () -> Void
     @State private var spin = 0.0
 
     var body: some View {
@@ -21,6 +23,10 @@ struct MainPage: View {
                 .padding(.top, 8)
                 .padding(.bottom, 10)
             Divider().padding(.horizontal, 12)
+            if !platforms.platforms.isEmpty {
+                ReceivingSection(store: store, platforms: platforms.platforms, open: openCalculator).padding(6)
+                Divider().padding(.horizontal, 12)
+            }
             controls.padding(6)
             Divider().padding(.horizontal, 12)
             footer
@@ -112,6 +118,10 @@ struct MainPage: View {
                 }
             }
             .buttonStyle(RowStyle(verticalPadding: 7))
+
+            if platforms.platforms.isEmpty {
+                PayoutEntryRow(open: openCalculator)
+            }
         }
     }
 
