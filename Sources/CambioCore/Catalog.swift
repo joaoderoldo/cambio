@@ -12,3 +12,49 @@ public struct Catalog: Codable, Equatable, Sendable {
         self.apiNames = apiNames
     }
 }
+
+extension Catalog {
+    public static let empty = Catalog(pairs: [], apiNames: [:])
+
+    public func contains(_ pair: CurrencyPair) -> Bool {
+        pairs.contains(pair.id)
+    }
+
+    /// Every currency that can be the "from" side, alphabetically.
+    public var bases: [String] {
+        Set(parsedPairs.map(\.base)).sorted()
+    }
+
+    /// Every currency `base` can be priced in, alphabetically.
+    public func quotes(for base: String) -> [String] {
+        Set(parsedPairs.filter { $0.base == base }.map(\.quote)).sorted()
+    }
+
+    /// The system's name for ISO currencies (so it follows the UI language),
+    /// then the API's name (e.g. BRLT, BRLPTAX), then the code itself.
+    public func displayName(for code: String, locale: Locale = .current) -> String {
+        if let localized = locale.localizedString(forCurrencyCode: code),
+           localized.caseInsensitiveCompare(code) != .orderedSame {
+            return localized
+        }
+        return apiNames[code] ?? code
+    }
+
+    /// Keeps the codes whose code or name contains `query`, ignoring case and accents.
+    public func search(_ codes: [String], query: String, locale: Locale = .current) -> [String] {
+        let needle = fold(query.trimmingCharacters(in: .whitespacesAndNewlines), locale: locale)
+        guard !needle.isEmpty else { return codes }
+        return codes.filter { code in
+            fold(code, locale: locale).contains(needle)
+                || fold(displayName(for: code, locale: locale), locale: locale).contains(needle)
+        }
+    }
+
+    private var parsedPairs: [CurrencyPair] {
+        pairs.compactMap(CurrencyPair.init(id:))
+    }
+
+    private func fold(_ text: String, locale: Locale) -> String {
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: locale)
+    }
+}
