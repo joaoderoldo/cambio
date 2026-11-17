@@ -1,0 +1,19 @@
+/* English is the development language: keys are the English text. */
+"Today: low %@ · high %@" = "Today: low %@ · high %@";
+"today" = "today";
+"30 days" = "30 days";
+"Updated at %@" = "Updated at %@";
+"Offline" = "Offline";
+"Switch currency" = "Switch currency";
+"Open at login" = "Open at login";
+"Refresh" = "Refresh";
+"Quit" = "Quit";
+"Currency" = "Currency";
+"FROM" = "FROM";
+"TO" = "TO";
+"Choose" = "Choose";
+"Destination currency" = "Destination currency";
+"Search currency or country" = "Search currency or country";
+"Popular" = "Popular";
+"All currencies" = "All currencies";
+"No currency found" = "No currency found";
